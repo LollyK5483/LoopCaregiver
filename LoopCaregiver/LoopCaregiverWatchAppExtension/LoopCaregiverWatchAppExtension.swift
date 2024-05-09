@@ -5,85 +5,105 @@
 //  Created by Bill Gestrich on 10/27/23.
 //
 
-import WidgetKit
+import HealthKit
+import LoopCaregiverKit
+import LoopCaregiverKitUI
+import LoopKit
 import SwiftUI
-
-struct Provider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
-    }
-
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
-    }
-    
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
-        }
-
-        return Timeline(entries: entries, policy: .atEnd)
-    }
-
-    func recommendations() -> [AppIntentRecommendation<ConfigurationAppIntent>] {
-        // Create an array with all the preconfigured widgets to show.
-        [AppIntentRecommendation(intent: ConfigurationAppIntent(), description: "Loop Caregiver Widget")]
-    }
-}
-
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let configuration: ConfigurationAppIntent
-}
-
-struct LoopCaregiverWatchAppExtensionEntryView : View {
-    var entry: Provider.Entry
-    var userDefaults = UserDefaults(suiteName: Bundle.main.appGroupSuiteName)!
-
-    var body: some View {
-        VStack {
-            Text(lastPhoneDebugMessage)
-        }
-    }
-
-    var lastPhoneDebugMessage: String {
-        if let message = userDefaults.lastPhoneDebugMessage {
-            return message
-        } else {
-            return "?"
-        }
-    }
-
-}
+import WidgetKit
 
 @main
 struct LoopCaregiverWatchAppExtension: Widget {
     let kind: String = "LoopCaregiverWatchAppExtension"
-
+    let provider = TimelineProvider()
+    
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
-            LoopCaregiverWatchAppExtensionEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: provider) { entry in
+            Group {
+                if let latestGlucose = entry.currentGlucoseSample {
+                    WidgetView(viewModel: widgetViewModel(entry: entry, latestGlucose: latestGlucose))
+                } else {
+                    Text("?")
+                }
+            }
+            .widgetURL(widgetURL(looper: entry.looper))
+            .containerBackground(.fill.tertiary, for: .widget)
+        }
+    }
+    
+    func widgetURL(looper: Looper?) -> URL {
+        guard let looper else {
+            let deepLink = SelectLooperDeepLink(looperUUID: "")
+            return deepLink.toURL()
+        }
+        let deepLink = SelectLooperDeepLink(looperUUID: looper.id)
+        return deepLink.toURL()
+    }
+    
+    func widgetViewModel(entry: SimpleEntry, latestGlucose: NewGlucoseSample) -> WidgetViewModel {
+        return WidgetViewModel(
+            timelineEntryDate: entry.date,
+            latestGlucose: latestGlucose,
+            lastGlucoseChange: entry.lastGlucoseChange,
+            isLastEntry: entry.isLastEntry,
+            glucoseDisplayUnits: entry.glucoseDisplayUnits,
+            looper: entry.looper
+        )
+    }
+    
+    func widgetURL(entry: SimpleEntry) -> URL {
+        guard let looper = entry.looper else {
+            let deepLink = SelectLooperDeepLink(looperUUID: "")
+            return deepLink.toURL()
+        }
+        let deepLink = SelectLooperDeepLink(looperUUID: looper.id)
+        return deepLink.toURL()
+    }
+}
+
+struct WidgetView: View {
+    var viewModel: WidgetViewModel
+    @Environment(\.widgetFamily)
+    var family
+    
+    @ViewBuilder var body: some View {
+        switch family {
+        case .accessoryRectangular:
+            LatestGlucoseRectangularView(viewModel: viewModel)
+        case .accessoryInline:
+            LatestGlucoseInlineView(viewModel: viewModel)
+        default:
+            LatestGlucoseCircularView(viewModel: viewModel)
         }
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
-        return intent
-    }
-}
+// TODO: These won't build when LoopCaregiverWidget_Previews, in another target/file is enabled.
 
 #Preview(as: .accessoryRectangular) {
     LoopCaregiverWatchAppExtension()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-}    
+    SimpleEntry(
+        looper: nil,
+        currentGlucoseSample: NewGlucoseSample.placeholder(),
+        lastGlucoseChange: nil,
+        date: .now,
+        entryIndex: 0,
+        isLastEntry: false,
+        glucoseDisplayUnits: .milligramsPerDeciliter
+    )
+}
+
+#Preview(as: .accessoryInline) {
+    LoopCaregiverWatchAppExtension()
+} timeline: {
+    SimpleEntry(
+        looper: nil,
+        currentGlucoseSample: NewGlucoseSample.placeholder(),
+        lastGlucoseChange: nil,
+        date: .now,
+        entryIndex: 0,
+        isLastEntry: false,
+        glucoseDisplayUnits: .milligramsPerDeciliter
+    )
+}

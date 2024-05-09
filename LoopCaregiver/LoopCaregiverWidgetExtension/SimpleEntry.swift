@@ -6,25 +6,26 @@
 //
 
 import Foundation
-import WidgetKit
+import LoopCaregiverKit
 import LoopKit
+import WidgetKit
 
 struct SimpleEntry: TimelineEntry {
     let looper: Looper?
     let currentGlucoseSample: NewGlucoseSample?
     let lastGlucoseChange: Double?
+    let error: Error?
     let date: Date
     let entryIndex: Int
     let isLastEntry: Bool
-    let configuration: ConfigurationIntent
-    
+
     func nextExpectedGlucoseDate() -> Date? {
         let secondsBetweenSamples: TimeInterval = 60 * 5
-        
+
         guard let glucoseDate = currentGlucoseSample?.date else {
             return nil
         }
-            
+
         return glucoseDate.addingTimeInterval(secondsBetweenSamples)
     }
 }

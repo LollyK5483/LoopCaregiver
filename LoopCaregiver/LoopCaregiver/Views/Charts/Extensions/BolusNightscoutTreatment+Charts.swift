@@ -6,12 +6,18 @@
 //
 
 import Foundation
-import NightscoutKit
 import HealthKit
+import NightscoutKit
 
 extension BolusNightscoutTreatment {
     func graphItem(egvValues: [GraphItem], displayUnit: HKUnit) -> GraphItem {
         let relativeEgvValue = interpolateEGVValue(egvs: egvValues, atDate: timestamp)
-        return GraphItem(type: .bolus(self.amount), displayTime: timestamp, quantity: HKQuantity(unit: displayUnit, doubleValue: relativeEgvValue), displayUnit: displayUnit, graphItemState: .success)
+        return GraphItem(
+            type: .bolus(self.amount),
+            displayTime: timestamp,
+            quantity: HKQuantity(unit: displayUnit, doubleValue: relativeEgvValue),
+            displayUnit: displayUnit,
+            graphItemState: .success
+        )
     }
 }

@@ -6,26 +6,35 @@
 //
 
 import Foundation
-import LoopKit
 import HealthKit
+import LoopKit
 
-
-//Loop Charts
+// Loop Charts
 extension NewGlucoseSample: GlucoseValue {
     public var startDate: Date {
         return date
     }
 }
 
-
-//Nightscout Graph
+// Nightscout Graph
 extension NewGlucoseSample {
     func graphItem(displayUnit: HKUnit) -> GraphItem {
-        return GraphItem(type: .egv, displayTime: date, quantity: quantity, displayUnit: displayUnit, graphItemState: .success)
+        return GraphItem(
+            type: .egv,
+            displayTime: date,
+            quantity: quantity,
+            displayUnit: displayUnit,
+            graphItemState: .success
+        )
     }
-    
+
     func predictedBGGraphItem(displayUnit: HKUnit) -> GraphItem {
-        return GraphItem(type: .predictedBG, displayTime: date, quantity: quantity, displayUnit: displayUnit, graphItemState: .success)
+        return GraphItem(
+            type: .predictedBG,
+            displayTime: date,
+            quantity: quantity,
+            displayUnit: displayUnit,
+            graphItemState: .success
+        )
     }
 }
-
