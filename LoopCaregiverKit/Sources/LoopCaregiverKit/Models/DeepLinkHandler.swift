@@ -30,6 +30,8 @@ public class DeepLinkHandlerPhone: DeepLinkHandler {
             try await handleAddLooperDeepLink(createLooperDeepLink)
         case .selectLooper(let selectLooperDeepLink):
             try await handleSelectLooperDeepLink(selectLooperDeepLink)
+        case .selectLooperError(let selectLooperErrorDeepLink):
+            try await handleSelectLooperErrorDeepLink(selectLooperErrorDeepLink)
         case .requestWatchConfigurationDeepLink(let requestWatchConfigurationDeepLink):
             try await handleRequestWatchConfigurationDeepLink(requestWatchConfigurationDeepLink)
         }
@@ -42,14 +44,23 @@ public class DeepLinkHandlerPhone: DeepLinkHandler {
         }
 
         if accountService.selectedLooper != looper {
-            accountService.selectedLooper = looper
+            do {
+                try accountService.updateActiveLoopUser(looper)
+            } catch {
+                print("Error setting Looper \(looper)")
+            }
         }
+    }
+    
+    @MainActor
+    func handleSelectLooperErrorDeepLink(_ deepLink: SelectLooperErrorDeepLink) async throws {
+        throw deepLink.error
     }
 
     @MainActor
     func handleAddLooperDeepLink(_ deepLink: CreateLooperDeepLink) async throws {
         let looper = Looper(identifier: UUID(), name: deepLink.name, nightscoutCredentials: NightscoutCredentials(url: deepLink.nsURL, secretKey: deepLink.secretKey, otpURL: deepLink.otpURL.absoluteString), lastSelectedDate: Date())
-        let service = accountService.createLooperService(looper: looper, settings: settings)
+        let service = accountService.createLooperService(looper: looper)
         try await service.remoteDataSource.checkAuth()
 
         if let existingLooper = accountService.loopers.first(where: { $0.name == looper.name }) {
@@ -88,6 +99,9 @@ public class DeepLinkHandlerWatch: DeepLinkHandler {
             try await handleAddLooperDeepLink(createLooperDeepLink)
         case .selectLooper(let selectLooperDeepLink):
             try await handleSelectLooperDeepLink(selectLooperDeepLink)
+        case .selectLooperError(let selectLooperErrorDeepLink):
+            // Throws
+            try await handleSelectLooperErrorDeepLink(selectLooperErrorDeepLink)
         case .requestWatchConfigurationDeepLink:
             preconditionFailure("Should not be received from iPhone")
         }
@@ -96,7 +110,7 @@ public class DeepLinkHandlerWatch: DeepLinkHandler {
     @MainActor
     func handleAddLooperDeepLink(_ deepLink: CreateLooperDeepLink) async throws {
         let looper = Looper(identifier: UUID(), name: deepLink.name, nightscoutCredentials: NightscoutCredentials(url: deepLink.nsURL, secretKey: deepLink.secretKey, otpURL: deepLink.otpURL.absoluteString), lastSelectedDate: Date())
-        let service = accountService.createLooperService(looper: looper, settings: settings)
+        let service = accountService.createLooperService(looper: looper)
         try await service.remoteDataSource.checkAuth()
 
         if let existingLooper = accountService.loopers.first(where: { $0.name == looper.name }) {
@@ -124,8 +138,17 @@ public class DeepLinkHandlerWatch: DeepLinkHandler {
         }
 
         if accountService.selectedLooper != looper {
-            accountService.selectedLooper = looper
+            do {
+                try accountService.updateActiveLoopUser(looper)
+            } catch {
+                print("Error selecting Looper: \(error)")
+            }
         }
+    }
+    
+    @MainActor
+    func handleSelectLooperErrorDeepLink(_ deepLink: SelectLooperErrorDeepLink) async throws {
+        throw deepLink.error
     }
 
     enum DeepLinkSelectLooperError: LocalizedError {
