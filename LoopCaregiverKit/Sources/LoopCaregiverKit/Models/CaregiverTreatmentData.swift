@@ -9,7 +9,8 @@ import HealthKit
 import LoopKit
 import NightscoutKit
 
-public struct CaregiverTreatmentData {
+public struct CaregiverTreatmentData: Equatable {
+    public let creationDate: Date
     public let glucoseDisplayUnits: HKUnit
     public let glucoseSamples: [NewGlucoseSample]
     public let predictedGlucose: [NewGlucoseSample]
@@ -23,6 +24,7 @@ public struct CaregiverTreatmentData {
     public let recommendedBolus: Double?
     
     public init(
+        creationDate: Date? = nil,
         glucoseDisplayUnits: HKUnit,
         glucoseSamples: [NewGlucoseSample],
         predictedGlucose: [NewGlucoseSample],
@@ -35,6 +37,7 @@ public struct CaregiverTreatmentData {
         currentCOB: COBStatus?,
         recommendedBolus: Double?
     ) {
+        self.creationDate = creationDate ?? Date()
         self.glucoseDisplayUnits = glucoseDisplayUnits
         self.glucoseSamples = glucoseSamples
         self.predictedGlucose = predictedGlucose
@@ -51,5 +54,21 @@ public struct CaregiverTreatmentData {
     public var lastGlucoseChange: Double? {
         let sortedSamples = glucoseSamples.sorted(by: { $0.date < $1.date })
         return sortedSamples.getLastGlucoseChange(displayUnits: glucoseDisplayUnits)
+    }
+    
+    public static func == (lhs: CaregiverTreatmentData, rhs: CaregiverTreatmentData) -> Bool {
+        return lhs.creationDate == rhs.creationDate &&
+        lhs.glucoseDisplayUnits == rhs.glucoseDisplayUnits &&
+        lhs.glucoseSamples == rhs.glucoseSamples &&
+        lhs.predictedGlucose == rhs.predictedGlucose &&
+        lhs.bolusEntries == rhs.bolusEntries &&
+        lhs.carbEntries == rhs.carbEntries &&
+        lhs.recentCommands == rhs.recentCommands &&
+        lhs.currentProfile == rhs.currentProfile &&
+        lhs.overrideAndStatus?.override == rhs.overrideAndStatus?.override &&
+        lhs.overrideAndStatus?.status.timestamp == rhs.overrideAndStatus?.status.timestamp &&
+        lhs.currentIOB == rhs.currentIOB &&
+        lhs.currentCOB == rhs.currentCOB &&
+        lhs.recommendedBolus == rhs.recommendedBolus
     }
 }

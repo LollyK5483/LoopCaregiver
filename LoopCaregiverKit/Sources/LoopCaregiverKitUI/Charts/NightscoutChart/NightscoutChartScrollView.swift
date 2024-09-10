@@ -16,7 +16,6 @@ public struct NightscoutChartScrollView: View {
     @ObservedObject var settings: CaregiverSettings
     @ObservedObject var remoteDataSource: RemoteDataServiceManager
     @State private var scrollRequestSubject = PassthroughSubject<ScrollType, Never>()
-    let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
     let compactMode: Bool
     public static let timelineLookbackIntervals = [1, 3, 6, 12, 24]
     @AppStorage(UserDefaults.standard.timelineVisibleLookbackHoursKey)
@@ -40,6 +39,7 @@ public struct NightscoutChartScrollView: View {
     }
 
     public var body: some View {
+        let _ = Self._printChanges()
         GeometryReader { containerGeometry in
             ZoomableScrollView { zoomScrollViewProxy in
                 NightscoutChartView(viewModel: graphViewModel)
