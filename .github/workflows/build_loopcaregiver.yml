@@ -14,6 +14,9 @@ jobs:
     needs: validate
     runs-on: macos-14
     steps:
+      - name: List xcode versions 
+        run: "ls /Applications/"
+
       # Uncomment to manually select latest Xcode if needed
       - name: Select Latest Xcode
         run: "sudo xcode-select --switch 	/Applications/Xcode_15.4.app/Contents/Developer"

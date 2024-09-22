@@ -28,7 +28,6 @@ struct HomeView: View {
     }
     
     var body: some View {
-        let _ = Self._printChanges()
         GeometryReader { geometryProxy in
             List {
                 graphRowView()
@@ -77,7 +76,8 @@ struct HomeView: View {
         }
     }
     
-    @ViewBuilder func overrideRowView() -> some View {
+    @ViewBuilder
+    func overrideRowView() -> some View {
         switch glucoseTimelineEntry {
         case .success(let glucoseTimelineValue):
             if let (override, status) = glucoseTimelineValue.treatmentData.overrideAndStatus {
@@ -150,7 +150,7 @@ struct HomeView: View {
             return GlucoseTimeLineEntry(error: WatchViewError.missingGlucose, date: Date(), looper: looperService.looper)
         }
         let treatmentData = CaregiverTreatmentData(
-            glucoseDisplayUnits: settings.glucoseDisplayUnits,
+            glucoseDisplayUnits: settings.glucosePreference.unit,
             glucoseSamples: sortedSamples,
             predictedGlucose: remoteDataSource.predictedGlucose,
             bolusEntries: remoteDataSource.bolusEntries,
